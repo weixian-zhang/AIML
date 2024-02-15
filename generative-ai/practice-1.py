@@ -16,6 +16,7 @@ client = AzureOpenAI(
 
 # define context
 # detail description or instruction
+# features if appropriate
 # directing prompt style like a "director" in a movie e.g: the quizshould be challenging but not overly complex
 # quantitative (measurement) e.g: for each question, give a difficulty of 7 out of 1 to 10
 
