@@ -1,0 +1,15 @@
+// Author: Microsoft Azure
+// Display name: Top 10 URL request count
+// Description: Show top 10 URLs by request count.
+// Categories: Network
+// Resource types: CDN profiles
+// Topic: Usage
+
+// top URLs by request count
+// Render line chart showing total requests per hour . 
+// Summarize number of requests per hour 
+AzureDiagnostics
+ | where ResourceProvider == "MICROSOFT.CDN" and Category == "FrontDoorAccessLog"
+ | summarize UserRequestCount = count() by requestUri_s
+ | order by UserRequestCount
+ | limit 10
