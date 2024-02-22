@@ -1,0 +1,7 @@
+let StartDate = ago(7d);
+let OperationNameFilter = "Add group";
+let AzureADGroupNameMatch = "<nameOfGroup>";
+AuditLogs
+| where TimeGenerated > StartDate
+| where OperationName contains OperationNameFilter
+| where TargetResources has AzureADGroupNameMatch

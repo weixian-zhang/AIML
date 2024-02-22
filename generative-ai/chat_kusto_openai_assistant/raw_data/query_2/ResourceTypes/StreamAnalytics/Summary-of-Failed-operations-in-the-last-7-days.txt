@@ -1,0 +1,14 @@
+// Author: someone@somewhere.com
+// Display name: Summary of 'Failed' operations in the last 7 days
+// Description: Summary of 'Failed' operations in the last 7 days
+// Category: Analytics
+// Topic: General
+// ResourceType: // optional, name should match Azure service, format? Stream Analytics jobs
+// Solution: // optional, name should match Log Analytics solution, format? 
+// labels: // open list of values, separate by commas
+
+
+AzureDiagnostics
+| where TimeGenerated > ago(7d) //last 7 days
+| where ResourceProvider == "MICROSOFT.STREAMANALYTICS" and status_s == "Failed" 
+| summarize Count=count(), sampleEvent=any(properties_s) by JobName=Resource
