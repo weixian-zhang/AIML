@@ -10,7 +10,6 @@ customEvents
  | where timestamp >= ago(24h)
  | summarize dcount(user_Id), count() by name
  | top 10 by count_ 
- | render barchart
 ```
 
 The output will look like this:

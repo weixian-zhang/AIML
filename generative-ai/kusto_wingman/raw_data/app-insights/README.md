@@ -30,13 +30,7 @@ traces
 | render timechart
 ```
 
-### 4. Count all record in all tables
-```
-union *
-| count 
-```
-
-### 5. Count all record in particular tables
+### 5. Count all requests
 ```
 requests
 | count

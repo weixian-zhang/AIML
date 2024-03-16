@@ -14,7 +14,6 @@ requests
 | where timestamp >= ago(1d)
 | make-series avg_duration = avg(duration) default=0 on timestamp in range(ago(1d), now(), 15m) 
 | extend monthly_avg = repeat(response_last_month, array_length(avg_duration))
-| render timechart
 ```
 
 The output will look like this:
