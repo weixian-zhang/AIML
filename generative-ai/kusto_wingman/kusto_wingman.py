@@ -129,6 +129,9 @@ def init():
 
 def create_message(threadId:str, assistantId: str, content: str):
 
+    messages = []
+    queryResult = []
+
     # creates user message
     user_message = openai.beta.threads.messages.create(
         thread_id=threadId,
@@ -152,14 +155,16 @@ def create_message(threadId:str, assistantId: str, content: str):
 
             if func_name == 'run_app_insights_query':
                 
-                result = run_app_insights_query(query_arg)
-                return result
-    else:
-        messages = openai.beta.threads.messages.list(thread_id=threadId)
-        response = messages.data[0].content[0].text.value
-        return response
+                queryResult = run_app_insights_query(query_arg)
             
+    
+    messageList = openai.beta.threads.messages.list(thread_id=threadId)
+    # for m in messageList.data:
+    #     messages.append((m.role, m.content[0].text.value))
+    
+    return messageList.data[0].content[0].text.value, queryResult
 
-threadId, assistantId = init()
+        
+#threadId, assistantId = init()
 
-result = create_message(threadId, assistantId, 'show me the total requests that is more than 1 day ago summarize by duration in percentage')
+#result = create_message(threadId, assistantId, 'show me the total requests that is more than 1 day ago summarize by duration in percentage')
