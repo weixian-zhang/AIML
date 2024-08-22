@@ -8,6 +8,8 @@ from sklearn.preprocessing import OneHotEncoder
 import os
 from pydantic import BaseModel
 
+#https://medium.com/@alidu143/containerizing-fastapi-app-with-docker-a-comprehensive-guide-416521b2457c
+
 app = FastAPI()
 dir_path = os.path.dirname(os.path.realpath(__file__))
 pickle_in = open(os.path.join(dir_path, "linear-regression-model.pkl"),"rb")
