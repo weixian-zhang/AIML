@@ -167,9 +167,9 @@ print(entropy_score)
 
 from sklearn.metrics import accuracy_score
 
-print(f'training score: {gini_score.score(x_train, y_train)}')
+print(f'training score: {dtc_gini.score(x_train, y_train)}')
 
-print(f'testing score: {gini_score.score(x_test, y_test)}')
+print(f'testing score: {dtc_gini.score(x_test, y_test)}')
 
 # COMMAND ----------
 
@@ -182,7 +182,7 @@ print(f'testing score: {gini_score.score(x_test, y_test)}')
 
 from sklearn import tree
 
-tree.plot_tree(gini_score.fit(x_train, y_train))
+tree.plot_tree(dtc_gini.fit(x_train, y_train))
 
 
 
