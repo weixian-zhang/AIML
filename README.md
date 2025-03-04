@@ -1,12 +1,13 @@
 ## AIML Learning Journey
 
-### Mathematics for Machine Learning and Data Science Specialization | [Coursera](https://www.coursera.org/specializations/mathematics-for-machine-learning-and-data-science)  
-* [Calculus for Machine Learning and Data Science](https://www.coursera.org/account/accomplishments/verify/LUN316U41PKU)
+## Certifications  
 
-<img src="https://github.com/user-attachments/assets/d5b689dc-483a-4329-8c1a-4deb26463e26" height="400px" width="700px" />  
+### Mathematics for Machine Learning and Data Science Specialization
+![image](https://github.com/user-attachments/assets/8bde056e-2960-4f83-9f0b-4e620644e6c6)
 
-* [Linear Algebra for Machine Learning and Data Science](https://www.coursera.org/account/accomplishments/verify/HKTL3MIAZ6KK)
-<img src="https://github.com/user-attachments/assets/d819a4f3-5c12-42bf-9eaf-8a3ba3e3218a" height="400px" width="700px" />  
+* [Calculus](https://www.coursera.org/account/accomplishments/verify/LUN316U41PKU)
+* [Linear Algebra](https://www.coursera.org/account/accomplishments/verify/HKTL3MIAZ6KK)
+* [Probability & Statistics](https://www.coursera.org/account/accomplishments/verify/E6COHIBB2XYJ)
 
 
 
