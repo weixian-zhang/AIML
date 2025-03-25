@@ -1,4 +1,4 @@
-## AIML Learning Journey
+## AIML Learning Chronicle
 
 ## Certifications  
 
