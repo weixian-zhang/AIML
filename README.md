@@ -2,7 +2,7 @@
 
 ## Certifications  
 
-### Mathematics for Machine Learning and Data Science Specialization
+### [Mathematics for Machine Learning and Data Science Specialization](https://www.coursera.org/account/accomplishments/specialization/TN76LTZA0G3P)
 ![image](https://github.com/user-attachments/assets/8bde056e-2960-4f83-9f0b-4e620644e6c6)
 
 ### [Machine Learning Specialization](https://www.coursera.org/account/accomplishments/specialization/J0YF4OSP8268)
