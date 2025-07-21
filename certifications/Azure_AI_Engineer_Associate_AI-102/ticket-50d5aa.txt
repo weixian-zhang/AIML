@@ -1,0 +1,4 @@
+Support ticket: 50d5aa
+Submitted by: user@example.com
+Description:
+Unable to access the Azure portal.

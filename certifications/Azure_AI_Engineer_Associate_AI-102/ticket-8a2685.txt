@@ -1,0 +1,4 @@
+Support ticket: 8a2685
+Submitted by: user@example.com
+Description:
+The user is unable to access the Azure portal.
