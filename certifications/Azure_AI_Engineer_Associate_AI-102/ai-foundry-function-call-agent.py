@@ -23,7 +23,6 @@ agent_client = AgentsClient(
 
 agent_client.enable_auto_function_calls(toolset)
 
-
 agents = agent_client.list_agents()
 if agents:
     for i, a in enumerate(agents):
@@ -39,6 +38,8 @@ if not agent:
                       """,
          toolset=toolset
      )
+    
+
     
 
 thread = agent_client.threads.create()
