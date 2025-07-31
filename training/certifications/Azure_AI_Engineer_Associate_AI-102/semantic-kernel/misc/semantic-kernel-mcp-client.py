@@ -33,9 +33,13 @@ async def main():
 
             tools = await session.list_tools()
 
+            prompts = await session.list_prompts()
+
             print(tools)
 
-    # Initialize the chat completion servi`c`e with Azure OpenAI
+            print(prompts)
+
+    # Initialize the chat completion service with Azure OpenAI
     chat_completion_service = AzureChatCompletion(
         deployment_name="gpt-4",
         api_version='2025-01-01-preview',
