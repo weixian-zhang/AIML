@@ -1,3 +1,4 @@
+import asyncio
 from fastmcp import FastMCP
 import os
 
@@ -21,13 +22,16 @@ def get_90s_movies_recommendation() -> str:
     
 
 @mcp.tool(name='invoke_external_service', description='Invoke an external service')
-def invoke_external_service(prompt: str) -> str:
+async def invoke_external_service() -> str: #(prompt: str) -> str:
     # Simulate an external service call
-    return f"External service response for prompt: {prompt}"
+    #return f"External service response for prompt: {prompt}"
+    return f"External service executed successfully."
 
 
+async def main():
+    await mcp.run_stdio_async()
 
 if __name__ == "__main__":
-    mcp.run()
+    asyncio.run(main())
 
 
