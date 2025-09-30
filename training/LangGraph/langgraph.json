@@ -1,0 +1,9 @@
+{
+    "dependencies": [
+        "."
+    ],
+    "graphs": {
+        "simple_example": "./simple_example/main.py:graph"
+    },
+    "env": "./.env"
+}
