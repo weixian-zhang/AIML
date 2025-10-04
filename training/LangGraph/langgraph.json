@@ -3,7 +3,7 @@
         "."
     ],
     "graphs": {
-        "simple_example": "./simple_example/main.py:graph"
+        "react_agent": "./react_agent.py:graph"
     },
     "env": "./.env"
 }

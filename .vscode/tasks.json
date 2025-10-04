@@ -1,0 +1,12 @@
+{
+    "tasks": [
+    {
+        "label": "langgrapgh dev",
+        "type": "shell",
+        "command": "langgraph dev --debug-port 5678",
+        "options": {
+            "cwd": "${workspaceFolder}/training/LangGraph"
+        },
+    }     
+    ]
+}
