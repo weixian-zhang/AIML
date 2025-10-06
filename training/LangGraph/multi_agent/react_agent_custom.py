@@ -49,7 +49,7 @@ def reasoner(state: AgentState):
     response = llm.invoke(state.messages)
     return {'messages': [response] }
 
-
+# returns a dict[str, BaseTool]
 tools = {tool.name: tool for tool in [tavily_search_tool] }
 
 def tool_executor(state: AgentState):
