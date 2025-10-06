@@ -42,7 +42,3 @@ def rag_tool(query: str) -> str:
     docs = vectorstore.similarity_search(query, k=5)
     context = "\n".join([doc.page_content for doc in docs])
     return context
-
-
-
-rag_tool('this book is published by who or which company?')

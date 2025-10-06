@@ -1,7 +1,7 @@
 from langchain_tavily import TavilySearch
 from langchain.tools import BaseTool, tool
 
-@tool
+@tool('Web search tool that searches the web for relevant information given a query.', return_direct=False)
 def tavily_search_tool(query: str, include_domains: list[str]) -> BaseTool:
     '''web searcher'''
 
@@ -16,7 +16,7 @@ def tavily_search_tool(query: str, include_domains: list[str]) -> BaseTool:
         include_answer=True,
         include_raw_content=True,
         # include_images=False,
-        # include_image_descriptions=False,
+        # include_image_descriptions=False, 
         search_depth="advanced",
         # time_range="day",
         include_domains=include_domains
@@ -25,7 +25,8 @@ def tavily_search_tool(query: str, include_domains: list[str]) -> BaseTool:
 
     
 
-    tool_msg = tool.invoke({"query": query, "include_domains": include_domains})
+    # tool_msg = tool.invoke({"query": query, "include_domains": include_domains})
 
-    return tool_msg['answer']
+    # return tool_msg['answer']
+    return "ASG is an abstration to list of VM private IP addresses making up a logical group for easier management."
 
