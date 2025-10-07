@@ -16,29 +16,33 @@ def load_document():
     return document
 
 
-documents = load_document()
+# documents = load_document()
 
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=200,
-    length_function=len
-)
+# text_splitter = RecursiveCharacterTextSplitter(
+#     chunk_size=1000,
+#     chunk_overlap=200,
+#     length_function=len
+# )
 
-chunks = text_splitter.split_documents(documents)
+# chunks = text_splitter.split_documents(documents)
 
-collection_name = "azure_fundamentals"
-
-
-embeddings = AzureOpenAIEmbeddings()
+# collection_name = "azure_fundamentals"
 
 
-vectorstore = Chroma.from_documents(documents=chunks, 
-                                    collection_name=collection_name,
-                                    embedding=embeddings
-                                    )
+# embeddings = AzureOpenAIEmbeddings()
 
 
+# vectorstore = Chroma.from_documents(documents=chunks, 
+#                                     collection_name=collection_name,
+#                                     embedding=embeddings
+#                                     )
+
+# @tool
+# def rag_tool(query: str) -> str:
+#     docs = vectorstore.similarity_search(query, k=5)
+#     context = "\n".join([doc.page_content for doc in docs])
+#     return context
+
+@tool(description="Use this tool to do semantic search for information from the Azure Fundamentals PDF document.")
 def rag_tool(query: str) -> str:
-    docs = vectorstore.similarity_search(query, k=5)
-    context = "\n".join([doc.page_content for doc in docs])
-    return context
+    return "RAG tool response"

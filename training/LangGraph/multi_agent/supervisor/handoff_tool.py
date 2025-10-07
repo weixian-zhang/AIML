@@ -10,7 +10,13 @@ from typing import Annotated
 from langgraph.prebuilt import InjectedState
 from langchain_core.tools import BaseTool, InjectedToolCallId
 
+
 def create_handoff_tool(next_agent_name: str, description: str, graph='') -> BaseTool:
+
+    '''
+    - Creates a handoff tool for delegating tasks between agents.
+    - state is injected and is immutable, so we need to return updated state in Command
+    '''
 
     @tool(description=description)
     def handoff_tool(state: Annotated[SupervisorState, InjectedState],
