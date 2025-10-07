@@ -10,7 +10,7 @@ from langgraph.prebuilt import create_react_agent, tools_condition, ToolNode
 from langgraph.graph.message import add_messages
 from datetime import datetime
 from IPython.display import Image, display
-from tools.web_search_tool import tavily_search_tool
+from web_search_tool import tavily_search_tool
 
 load_dotenv()
 
@@ -18,9 +18,6 @@ load_dotenv()
  
 class AgentState(BaseModel):
     messages: Annotated[list[BaseMessage], add_messages]
-    # tool_name: str  # Simple tool name
-    # tool_args: dict  # Simple args dict
-    # result: str
 
 
 def route_tools(state: AgentState):
