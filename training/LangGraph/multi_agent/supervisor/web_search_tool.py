@@ -1,8 +1,12 @@
 from langchain_tavily import TavilySearch
 from langchain.tools import BaseTool, tool
+from typing import Annotated
+from langgraph.prebuilt import InjectedState
+from state import SupervisorState
+from langgraph.graph import add_messages
 
 @tool(description='Web search tool that searches the web for information given a query.', return_direct=False)
-def tavily_search_tool(query: str, include_domains: list[str]) -> BaseTool:
+def tavily_search_tool(query: str, include_domains: list[str], state: Annotated[SupervisorState, InjectedState]) -> Annotated[SupervisorState, add_messages]:
     '''web searcher'''
 
     include_domains = [
@@ -23,10 +27,15 @@ def tavily_search_tool(query: str, include_domains: list[str]) -> BaseTool:
         # exclude_domains=None
     )
 
-    
 
     # tool_msg = tool.invoke({"query": query, "include_domains": include_domains})
 
-    # return tool_msg['answer']
-    return "ASG is an abstration to list of VM private IP addresses making up a logical group for easier management."
+    #state.web_search_content = tool_msg['answer']
+    
+    answer =  "ASG is an abstraction to list of VM private IP addresses making up a logical group for easier management."
+
+    # set state like this does not work, injected state is immutable
+    state.web_search_content = answer
+
+    return answer
 

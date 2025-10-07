@@ -10,7 +10,7 @@ load_dotenv()
 # https://blog.futuresmart.ai/langgraph-agent-with-rag-and-nl2sql#heading-agentic-rag-tool-integration
 
 def load_document():
-    doc_path = os.path.join(os.path.dirname(__file__), "./azure_fundamentals.pdf")
+    doc_path = os.path.join(os.path.dirname(__file__), "./data/azure_fundamentals.pdf")
     loader = PyPDFLoader(doc_path)
     document = loader.load()
     return document
