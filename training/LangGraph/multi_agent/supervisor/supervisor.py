@@ -100,31 +100,39 @@ def create_web_search_agent() -> StateGraph[AgentState]:
 
         messages = [system_msg] + state.messages
 
-        ai_message: AIMessage = llm.invoke(messages)
+        last_message = state.messages[-1] if state.messages else None
 
-        return {'messages': ai_message}
+        if not last_message or not isinstance(last_message, ToolMessage):
+            ai_message: AIMessage = llm.invoke(messages)
+            return {'messages': messages + [ai_message]}
+        
+        return {'messages': messages}
     
 
-    # def tool_router(state: AgentState) -> Command[str]:
-    #     last_message = state.messages[-1] if state.messages else None
+    def tool_router(state: AgentState) -> Command[str]:
+        last_message = state.messages[-1] if state.messages else None
 
-    #     if isinstance(last_message, AIMessage) and last_message.tool_calls:
-    #         tool_name = last_message['name']
-    #         tool_args = last_message['args']
-    #         tool_id = last_message['id']
-    #         if tool_name == 'tavily_search_tool':
-    #             return AIMessage()
+        if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
+            return "tools" 
+        return "web_search_agent"
+
+        # if isinstance(last_message, AIMessage) and last_message.tool_calls:
+        #     tool_name = last_message['name']
+        #     tool_args = last_message['args']
+        #     tool_id = last_message['id']
+        #     if tool_name == 'tavily_search_tool':
+        #         return AIMessage()
+            
 
     builder = StateGraph(AgentState)
     builder.add_node('web_search_agent', web_search_agent)
-    builder.add_node('tools', ToolNode([tavily_search_tool]))
-    builder.add_node('handoff', ToolNode([create_handoff_tool(next_agent_name="supervisor", 
+    builder.add_node('tools', ToolNode([tavily_search_tool,
+                                        create_handoff_tool(next_agent_name="supervisor", 
                                                 description="Completed web search, handoff tool to delegate tasks back to supervisor agent.",
                                                 graph=Command.PARENT)]))
-    builder.add_conditional_edges('web_search_agent', tools_condition, {'tools': 'tools', 'END': 'web_search_agent'})
+    builder.add_conditional_edges('web_search_agent', tools_condition, {'tools': 'tools', '__end__': 'web_search_agent'})
     builder.add_edge('tools', 'web_search_agent')
     builder.add_edge(START, 'web_search_agent')
-    builder.add_edge('web_search_agent', 'handoff')
 
     return builder.compile()
 
@@ -211,18 +219,21 @@ graph_builder.add_edge('supervisor', END)
 
 graph = graph_builder.compile()
 
-for m in graph.stream(AgentState(
-    messages=[HumanMessage(content="In Azure Fundamental concepts, what is the purpose of Application Security Group?")],
-    rag_content="",
-    web_search_content="",
-    final_content=""
-)):
-    if isinstance(m, dict):
-        print(f'{m}\n\n')
-    elif isinstance(m, BaseMessage):
-        print(f'{m.type}: {m.content}\n\n')
-    else:
-        print(f'{m}\n\n')
+try:
+    for m in graph.stream(AgentState(
+        messages=[HumanMessage(content="In Azure Fundamental concepts, what is the purpose of Application Security Group?")],
+        rag_content="",
+        web_search_content="",
+        final_content=""
+    )):
+        if isinstance(m, dict):
+            print(f'{m}\n\n')
+        elif isinstance(m, BaseMessage):
+            print(f'{m.type}: {m.content}\n\n')
+        else:
+            print(f'{m}\n\n')
+except Exception as e:
+    print(f'Error: {e}')
 
     
     

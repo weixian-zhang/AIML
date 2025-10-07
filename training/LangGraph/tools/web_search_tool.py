@@ -1,7 +1,7 @@
 from langchain_tavily import TavilySearch
 from langchain.tools import BaseTool, tool
 
-@tool('Web search tool that searches the web for relevant information given a query.', return_direct=False)
+@tool(description='Web search tool that searches the web for information given a query.', return_direct=False)
 def tavily_search_tool(query: str, include_domains: list[str]) -> BaseTool:
     '''web searcher'''
 
