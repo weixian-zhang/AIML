@@ -6,12 +6,13 @@ supervisor_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path.append(langgraph_dir)
 sys.path.append(supervisor_dir)
 
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, Any
 # from langchain_core.tools import ToolCall
 from langchain_azure_ai import AzureAIChatCompletionsModel
-# from tools.rag_tool import rag_tool
+from rag_tool import rag_tool
 from web_search_tool import tavily_search_tool
 from langgraph.graph import StateGraph, START, END, add_messages
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 from langgraph.prebuilt import ToolNode, create_react_agent, tools_condition
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage, ToolMessage
@@ -32,7 +33,8 @@ def create_llm():
     
 
 def supervisor(state: SupervisorState): #Command[Literal["rag", "web_search","content_comparer", "response"]]:
-    agents = ["rag", "web_search", "content_comparer", "response"]
+    # agents = ["rag", "web_search", "content_comparer", "END"]
+    agents = ["rag", "END"]
     list_of_agents = ', '.join(agents)
 
     system_prompt = f"""You are a supervisor agent that manages multiple specialized agents in this list of agents: {list_of_agents}, to accomplish complex tasks. \n
@@ -43,7 +45,9 @@ def supervisor(state: SupervisorState): #Command[Literal["rag", "web_search","co
 
     class Router(TypedDict):
         """Worker to route to next. If no workers needed, route to FINISH."""
-        next: Literal["rag", "web_search", "content_comparer", "END"]
+        # next: Literal["rag", "web_search", "content_comparer", "END"]
+        next: Literal["rag", "END"]
+
 
 
     if state.messages and state.messages[0].type != 'system':
@@ -59,23 +63,14 @@ def supervisor(state: SupervisorState): #Command[Literal["rag", "web_search","co
 
 
 
-# Use the following format:\n
-# Thought: Do I need to use a tool? Yes\n
-# Action: the action to take, should be one of [tavily_search_tool]\n
-# Action Input: the input to the action\n
-# Observation: the result of the action\n
-# ... (this Thought/Action/Action Input/Observation can repeat N times)\n
-# Thought: Do I need to use a tool? No\n
-# Final Answer: the final answer to the original question.\n
-# Only use the tools get_weather, tavily_search_tool, add. 
-# If you don't know the answer, just say you don't know. Do not make up an answer.
-
 def create_web_search_agent() -> StateGraph[SupervisorState]:
     """
     options to execute tool:
     1. by using LangGraph's "create_react_agent"
     2. create subgraph: agent node + tool node + routing logic
     3. manual tool execution with BaseTool.invoke and return ToolMessage
+
+    this function uses option 2 to create a subgraph, simulating a create_react_agent
     """
 
     def web_search_agent(state: SupervisorState) -> Command[str]:
@@ -101,7 +96,10 @@ def create_web_search_agent() -> StateGraph[SupervisorState]:
         messages = state.messages
         web_search_content = state.web_search_content
 
-        if last_message and isinstance(last_message, ToolMessage) and not state.web_search_content:
+        # check tool name to support multiple tools
+        # state.web_search_content_reducer will prevent override of web_search_content with other TooMessage like handoff_tool or other tool message is returned
+        # another way to prevent state value override is to have tool update state directly
+        if last_message and isinstance(last_message, ToolMessage) and last_message.name == 'tavily_search_tool':
             web_search_content = last_message.content
 
         if last_message and not isinstance(last_message, ToolMessage):
@@ -109,15 +107,6 @@ def create_web_search_agent() -> StateGraph[SupervisorState]:
             messages = state.messages + [ai_message]
         
         return {'messages': messages, 'web_search_content': web_search_content}
-    
-
-    # def tool_router(state: SupervisorState) -> Command[str]:
-    #     last_message = state.messages[-1] if state.messages else None
-
-    #     if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
-    #         return "tools"
-    #     return "web_search_agent"
-
 
 
     builder = StateGraph(SupervisorState)
@@ -135,64 +124,99 @@ def create_web_search_agent() -> StateGraph[SupervisorState]:
 
 
 
-def rag_agent(state: SupervisorState) -> Command[Literal["supervisor"]]:
+def create_rag_agent() -> CompiledStateGraph[Any, None, Any, Any]:
 
     system_msg = SystemMessage(content="""You are a helpful assistant tasked with using tools for retrieval-augmented generation.
                                       Only use the tool rag_tool to find answers and not from your pre-trained knowledge.
                                       If you don't know the answer, just say you don't know. Do not make up an answer.
                                """)
 
-    llm = create_llm().bind_tools([rag_tool])
+    agent = create_react_agent(
+        model=create_llm(),
+        tools=[
+                rag_tool,
+                create_handoff_tool(next_agent_name="supervisor", 
+                                    description="handoff tool to delegate tasks back to supervisor agent.")
+              ], # [rag_tool],
+        prompt=system_msg,
+        name="rag_agent",
+        state_schema=SupervisorState,
+
+    )
+
+    return agent
+
+    # ai_response: AIMessage = agent.invoke(state.messages)
+
+    # if ai_response.tool_calls:
+    #     pass
+
+    # content = ai_response.content
+
+    # return Command(update= {
+    #     'messages': [
+    #         ai_response, #HumanMessage(content=content)
+    #     ],
+    #     'rag_content': content
+    # }, goto="supervisor")
 
 
-    messages = [system_msg] + state.messages
+def create_content_comparer_agent() -> CompiledStateGraph[Any, None, Any, Any]:
 
-    ai_response: AIMessage = llm.invoke(messages)
+    # internet_source = state.web_search_content
+    # rag_source = state.rag_content
 
-    if ai_response.tool_calls:
-        pass
+    # if not internet_source or not rag_source:
+    #     return Command(goto="supervisor")
 
-    content = ai_response.content
-
-    return Command(update= {
-        'messages': [
-            ai_response, #HumanMessage(content=content)
-        ],
-        'rag_content': content
-    }, goto="supervisor")
-
-
-def content_comparer_agent(state: SupervisorState) -> Command[Literal["supervisor"]]:
-
-    internet_source = state.web_search_content
-    rag_source = state.rag_content
-
-    if not internet_source or not rag_source:
-        return Command(goto="supervisor")
-
-    system_msg = SystemMessage(content="""You are a helpful assistant tasked with comparing content of 2 sources and merge, synthesize or summarize 2 sources into single content.""")
+    system_msg = SystemMessage(content="""You are a helpful assistant tasked to compare content of 2 sources and merge, \n
+                               synthesize, merge or summarize 2 sources into single content.""")
     
     HumanMessage(content="""from Azure Fundamental content 2 sources: 'Internet Source' and 'RAG Source', compare and merge, synthesize or summarize 2 sources into single content" \n
     Internet Source: {internet_source} \n
-    RAG Source: {rag_source} \n
+    RAG Source: {rag_source} \n\n
+                 
+    Output: a single content that makes the most sense and is accurate based on 2 sources.
     """)
 
-    llm = create_llm()
+    agent = create_react_agent(
+    model=create_llm(),
+    tools=[
+            rag_tool,
+            create_handoff_tool(next_agent_name="supervisor", 
+                                description="handoff tool to delegate tasks back to supervisor agent.")
+            ], # [rag_tool],
+    system_message=system_msg,
+    name="create_content_comparer_agent",
+    state_schema=SupervisorState,
+    )
 
-    messages = [system_msg] + state.messages
-
-    ai_response: AIMessage | ToolMessage = llm.invoke(messages)
+    return agent
 
 
-    return Command(update= {
-        'messages': [
-            ai_response ##HumanMessage(content=content)
-        ],
-        'final_content': ai_response.content
-    }, goto="supervisor")
+def rag_agent_node(state: SupervisorState) -> Command[str]:
 
+    human_message = state.messages[-1] if state.messages else None
 
-def response(state: SupervisorState) -> Command[Literal["END"]]:
+    agent = create_react_agent(
+        model=create_llm(),
+        tools=[
+                rag_tool,
+                create_handoff_tool(next_agent_name="supervisor", 
+                                    description="handoff tool to delegate tasks back to supervisor agent.")
+              ],
+        prompt=human_message,
+        name="rag_agent",
+        state_schema=SupervisorState
+
+    )
+
+    response = agent.invoke(state)
+
+    return {'messages': response['messages']}
+
+#TODO
+def response_human_in_the_loop(state: SupervisorState) -> Command[Literal["END"]]:
     if not state.final_content:
         return Command(goto='supervisor')
 
@@ -202,20 +226,19 @@ def response(state: SupervisorState) -> Command[Literal["END"]]:
 
 graph_builder = StateGraph(SupervisorState)
 graph_builder.add_node('supervisor', supervisor) #, destinations=['rag', 'web_search', 'content_comparer', 'response'])
-graph_builder.add_node('web_search', create_web_search_agent())
-# graph_builder.add_node('rag', rag_agent, destinations=['supervisor'])
-graph_builder.add_node('response', response, destinations=[END])
-graph_builder.add_node('content_comparer', content_comparer_agent, destinations=['supervisor'])
+graph_builder.add_node('web_search', create_web_search_agent(), destinations=['supervisor'])
+graph_builder.add_node('rag', rag_agent_node, destinations=['supervisor'])
+# graph_builder.add_node('response', response, destinations=[END])
+# graph_builder.add_node('content_comparer', create_content_comparer_agent(), destinations=['supervisor'])
 
 graph_builder.add_edge(START, 'supervisor')
-graph_builder.add_edge('supervisor', 'web_search')
-# graph_builder.add_edge('supervisor', 'rag')
+# graph_builder.add_edge('supervisor', 'web_search')
+graph_builder.add_edge('supervisor', 'rag')
 # graph_builder.add_edge('supervisor', 'content_comparer')
 graph_builder.add_edge('supervisor', END)
 
 
 graph = graph_builder.compile()
-
 
 try:
     for m in graph.stream(SupervisorState(

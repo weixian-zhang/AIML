@@ -9,10 +9,18 @@ from langchain_core.messages import SystemMessage
 #     messages: Annotated[list[BaseMessage], add_messages]
 
 
+
+def web_search_content_reducer(current_value: str, new_value: str) -> str:
+    # Implement your custom logic here
+    if not current_value:
+        return new_value
+    return current_value
+
+
 class SupervisorState(BaseModel):
     messages: Annotated[list[BaseMessage], add_messages] = Field(default_factory=list)
     rag_content: Optional[str] = Field(default='')
-    web_search_content: Optional[str] = Field(default='')
+    web_search_content: Annotated[str, web_search_content_reducer] = Field(default_factory='')
     final_content: Optional[str] = Field(default='')
     id: int = Field(default=0)
 
