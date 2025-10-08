@@ -49,7 +49,7 @@ load_dotenv()
 #     context = "\n".join([doc.page_content for doc in docs])
 #     return context
 
-@tool(description="Use this tool to do semantic search for information from the Azure Fundamentals PDF document.")
+@tool(description="RAG tool sto do semantic search for information from vector database to answer user query")
 def rag_tool(query: str, 
              state: Annotated[SupervisorState, InjectedState], 
              tool_call_id: Annotated[str, InjectedToolCallId]) -> dict[str, str]:
@@ -64,4 +64,4 @@ def rag_tool(query: str,
         name="rag_tool",
         tool_call_id=tool_call_id
     )
-    return Command(update={"messages": [tool_message], "web_search_content": "ASG is awesome!"})
+    return  Command(update= {"messages": [tool_message], "rag_content": "ASG is awesome!"})
