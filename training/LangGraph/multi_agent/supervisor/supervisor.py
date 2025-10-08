@@ -10,7 +10,7 @@ from typing import Literal, TypedDict, Any
 # from langchain_core.tools import ToolCall
 from langchain_azure_ai import AzureAIChatCompletionsModel
 from rag_tool import rag_tool
-from web_search_tool import tavily_search_tool
+from web_search_tool import create_web_search_tool
 from langgraph.graph import StateGraph, START, END, add_messages
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
@@ -62,7 +62,6 @@ def supervisor(state: SupervisorState): #Command[Literal["rag", "web_search","co
     return Command(goto=route_to_agent)
 
 
-
 def create_web_search_agent() -> StateGraph[SupervisorState]:
     """
     options to execute tool:
@@ -76,7 +75,7 @@ def create_web_search_agent() -> StateGraph[SupervisorState]:
     def web_search_agent(state: SupervisorState) -> Command[str]:
         
         llm = create_llm().bind_tools([
-                tavily_search_tool, 
+                create_web_search_tool(next_agent="web_search_agent"),
                 create_handoff_tool(next_agent_name="supervisor", 
                                     description="handoff tool to delegate tasks back to supervisor agent.",
                                     graph=Command.PARENT)
@@ -111,7 +110,7 @@ def create_web_search_agent() -> StateGraph[SupervisorState]:
 
     builder = StateGraph(SupervisorState)
     builder.add_node('web_search_agent', web_search_agent)
-    builder.add_node('tools', ToolNode([tavily_search_tool,
+    builder.add_node('tools', ToolNode([create_web_search_tool(next_agent="web_search_agent"),
                                         create_handoff_tool(next_agent_name="supervisor", 
                                                 description="Completed web search, handoff tool to delegate tasks back to supervisor agent.",
                                                 graph=Command.PARENT)]))
@@ -124,41 +123,29 @@ def create_web_search_agent() -> StateGraph[SupervisorState]:
 
 
 
-def create_rag_agent() -> CompiledStateGraph[Any, None, Any, Any]:
+# def create_rag_agent() -> CompiledStateGraph[Any, None, Any, Any]:
 
-    system_msg = SystemMessage(content="""You are a helpful assistant tasked with using tools for retrieval-augmented generation.
-                                      Only use the tool rag_tool to find answers and not from your pre-trained knowledge.
-                                      If you don't know the answer, just say you don't know. Do not make up an answer.
-                               """)
+#     system_msg = SystemMessage(content="""You are a helpful assistant tasked with using tools for retrieval-augmented generation.
+#                                       Only use the tool rag_tool to find answers and not from your pre-trained knowledge.
+#                                       If you don't know the answer, just say you don't know. Do not make up an answer.
+#                                """)
 
-    agent = create_react_agent(
-        model=create_llm(),
-        tools=[
-                rag_tool,
-                create_handoff_tool(next_agent_name="supervisor", 
-                                    description="handoff tool to delegate tasks back to supervisor agent.")
-              ], # [rag_tool],
-        prompt=system_msg,
-        name="rag_agent",
-        state_schema=SupervisorState,
+#     agent = create_react_agent(
+#         model=create_llm(),
+#         tools=[
+#                 rag_tool,
+#                 create_handoff_tool(next_agent_name="rag", # back to rag node
+#                                     description="handoff tool to delegate tasks back to supervisor agent.")
+#               ], # [rag_tool],
+#         prompt=system_msg,
+#         name="rag_agent",
+#         state_schema=SupervisorState,
 
-    )
+#     )
 
-    return agent
+#     return agent
 
-    # ai_response: AIMessage = agent.invoke(state.messages)
 
-    # if ai_response.tool_calls:
-    #     pass
-
-    # content = ai_response.content
-
-    # return Command(update= {
-    #     'messages': [
-    #         ai_response, #HumanMessage(content=content)
-    #     ],
-    #     'rag_content': content
-    # }, goto="supervisor")
 
 
 def create_content_comparer_agent() -> CompiledStateGraph[Any, None, Any, Any]:
@@ -194,7 +181,7 @@ def create_content_comparer_agent() -> CompiledStateGraph[Any, None, Any, Any]:
     return agent
 
 
-def rag_agent_node(state: SupervisorState) -> Command[str]:
+def rag_agent_agent(state: SupervisorState) -> Command[str]:
 
     human_message = state.messages[-1] if state.messages else None
 
@@ -205,15 +192,15 @@ def rag_agent_node(state: SupervisorState) -> Command[str]:
                 create_handoff_tool(next_agent_name="supervisor", 
                                     description="handoff tool to delegate tasks back to supervisor agent.")
               ],
-        prompt=human_message,
+        prompt=human_message.content,
         name="rag_agent",
         state_schema=SupervisorState
 
     )
 
-    response = agent.invoke(state)
+    response_state = agent.invoke(state)
 
-    return {'messages': response['messages']}
+    return response_state
 
 #TODO
 def response_human_in_the_loop(state: SupervisorState) -> Command[Literal["END"]]:
@@ -227,7 +214,7 @@ def response_human_in_the_loop(state: SupervisorState) -> Command[Literal["END"]
 graph_builder = StateGraph(SupervisorState)
 graph_builder.add_node('supervisor', supervisor) #, destinations=['rag', 'web_search', 'content_comparer', 'response'])
 graph_builder.add_node('web_search', create_web_search_agent(), destinations=['supervisor'])
-graph_builder.add_node('rag', rag_agent_node, destinations=['supervisor'])
+graph_builder.add_node('rag', rag_agent_agent, destinations=['supervisor'])
 # graph_builder.add_node('response', response, destinations=[END])
 # graph_builder.add_node('content_comparer', create_content_comparer_agent(), destinations=['supervisor'])
 
@@ -238,10 +225,10 @@ graph_builder.add_edge('supervisor', 'rag')
 graph_builder.add_edge('supervisor', END)
 
 
-graph = graph_builder.compile()
+graph: CompiledStateGraph = graph_builder.compile()
 
 try:
-    for m in graph.stream(SupervisorState(
+    for m in graph.invoke(SupervisorState(
         messages=[HumanMessage(content="In Azure Fundamental concepts, what is the purpose of Application Security Group?")],
         rag_content="",
         web_search_content="",
@@ -257,4 +244,7 @@ except Exception as e:
     print(f'Error: {e}')
 
     
+    
+
+
     
