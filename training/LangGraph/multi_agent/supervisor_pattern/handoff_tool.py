@@ -23,19 +23,19 @@ def create_handoff_tool(next_agent_name: str, description: str, graph='') -> Bas
                      tool_call_id: Annotated[str, InjectedToolCallId]
                      ) -> Command:
         
+        response_message = f'handoff tool successfully transferred to {next_agent_name}'
+
+        if not state.web_search_content:
+            response_message = f"handoff tool Not routing to {next_agent_name} as web_search_content is empty"
+        
         tool_message = ToolMessage(
-            content=f"Successfully transferred to {next_agent_name}",
-            name=next_agent_name,
-            tool_call_id=tool_call_id,
+                content=response_message,
+                name=next_agent_name,
+                tool_call_id=tool_call_id,
         )
+        
 
-        web_search_content = state.web_search_content
-
-        return Command(goto=next_agent_name, 
-                       update={
-                           'messages': state.messages + [tool_message],
-                           'web_search_content': web_search_content
-                       },
-                       graph=graph)
+        return {'messages': [tool_message], 'web_search_content': state.web_search_content}
+    #Command(goto='end_subgraph', update={'messages': [tool_message], 'web_search_content': state.web_search_content})
 
     return handoff_tool
