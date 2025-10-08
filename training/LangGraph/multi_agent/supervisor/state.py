@@ -18,6 +18,7 @@ def web_search_content_reducer(current_value: str, new_value: str) -> str:
 
 
 class SupervisorState(BaseModel):
+    remaining_steps: int = Field(default=5)
     messages: Annotated[list[BaseMessage], add_messages] = Field(default_factory=list)
     rag_content: Optional[str] = Field(default='')
     web_search_content: Annotated[str, web_search_content_reducer] = Field(default_factory='')
