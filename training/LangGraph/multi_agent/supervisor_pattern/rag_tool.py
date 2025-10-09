@@ -1,5 +1,5 @@
 import os
-# from langchain.document_loaders import PyPDFLoader
+from langchain.document_loaders import PyPDFLoader
 from typing import Annotated
 from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -15,44 +15,43 @@ from state import SupervisorState
 load_dotenv()
 # https://blog.futuresmart.ai/langgraph-agent-with-rag-and-nl2sql#heading-agentic-rag-tool-integration
 
-# def load_document():
-#     doc_path = os.path.join(os.path.dirname(__file__), "./data/azure_fundamentals.pdf")
-#     loader = PyPDFLoader(doc_path)
-#     document = loader.load()
-#     return document
+def load_document():
+    doc_path = os.path.join(os.path.dirname(__file__), "./data/azure_fundamentals.pdf")
+    loader = PyPDFLoader(doc_path)
+    document = loader.load()
+    return document
 
 
-# documents = load_document()
+documents = load_document()
 
-# text_splitter = RecursiveCharacterTextSplitter(
-#     chunk_size=1000,
-#     chunk_overlap=200,
-#     length_function=len
-# )
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=200,
+    length_function=len
+)
 
-# chunks = text_splitter.split_documents(documents)
+chunks = text_splitter.split_documents(documents)
 
-# collection_name = "azure_fundamentals"
-
-
-# embeddings = AzureOpenAIEmbeddings()
+collection_name = "azure_fundamentals"
 
 
-# vectorstore = Chroma.from_documents(documents=chunks, 
-#                                     collection_name=collection_name,
-#                                     embedding=embeddings
-#                                     )
+embeddings = AzureOpenAIEmbeddings()
 
-# @tool
-# def rag_tool(query: str) -> str:
-#     docs = vectorstore.similarity_search(query, k=5)
-#     context = "\n".join([doc.page_content for doc in docs])
-#     return context
+
+vectorstore = Chroma.from_documents(documents=chunks, 
+                                    collection_name=collection_name,
+                                    embedding=embeddings
+                                    )
+
+
 
 @tool(description="RAG tool sto do semantic search for information from vector database to answer user query")
 def rag_tool(query: str, 
              state: Annotated[SupervisorState, InjectedState], 
              tool_call_id: Annotated[str, InjectedToolCallId]) -> dict[str, str]:
+    
+
+    assert query, 'query is required'
     
     # must return ToolMessage after tool call if custom Command is return
     # if not, error:
@@ -64,4 +63,9 @@ def rag_tool(query: str,
         name="rag_tool",
         tool_call_id=tool_call_id
     )
-    return  Command(update= {"messages": [tool_message], "rag_content": "ASG is awesome!"})
+
+    search_result = vectorstore.similarity_search(query=query, k=3)
+
+    result = '\n\n'.join([doc.page_content for doc in search_result])
+
+    return  Command(update= {"messages": [tool_message], "rag_content": result})
