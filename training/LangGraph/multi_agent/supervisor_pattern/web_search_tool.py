@@ -39,24 +39,11 @@ def tavily_search_tool(query: str, include_domains: list[str],
         tool_call_id=tool_call_id
     )
 
-    answer =  "ASG is an abstraction to list of VM private IP addresses making up a logical group for easier management."
+    search_result = search_client.invoke({"query": query, "include_domains": include_domains})
+
+    answer =  search_result['answer']
 
     return Command(goto="web_search", update={"messages": [tool_message], "web_search_content": answer})
-# {"messages": [tool_message], "web_search_content": answer}
-#
-
-    #
-
-
-        # search_result = search_client.invoke({"query": query, "include_domains": include_domains})
-
-        # answer =  "ASG is an abstraction to list of VM private IP addresses making up a logical group for easier management." # search_result['answer']
-
-        # # set state like this does not work, injected state is immutable
-        # state.web_search_content = answer
-
-        # return answer
-    
 
 
 

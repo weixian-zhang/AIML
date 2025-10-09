@@ -72,8 +72,10 @@ def supervisor(state: SupervisorState): #Command[Literal["rag", "web_search","co
         next: Literal["rag", "web_search", "content_comparer", "END"]
 
 
-    if state.messages and state.messages[0].type != 'system':
-        state.messages = [SystemMessage(content=system_prompt)] + state.messages
+    # if state.messages and state.messages[0].type != 'system':
+    #     state.messages = [SystemMessage(content=system_prompt)] + state.messages
+
+    state.messages = [SystemMessage(content=system_prompt)] + state.messages
 
     llm = create_llm().with_structured_output(Router)
 
