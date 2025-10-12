@@ -1,4 +1,3 @@
-# https://blog.futuresmart.ai/multi-agent-system-with-langgraph
 import os, sys
 # get parent path
 langgraph_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
@@ -7,7 +6,6 @@ sys.path.append(langgraph_dir)
 sys.path.append(supervisor_dir)
 
 from typing import Literal, TypedDict, Any
-# from langchain_core.tools import ToolCall
 from langchain_azure_ai import AzureAIChatCompletionsModel
 from rag_tool import rag_tool
 from web_search_tool import tavily_search_tool
@@ -19,6 +17,8 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AI
 from dotenv import load_dotenv
 from handoff_tool import create_handoff_tool
 from state import SupervisorState
+
+# https://blog.futuresmart.ai/multi-agent-system-with-langgraph
 
 
 load_dotenv()
