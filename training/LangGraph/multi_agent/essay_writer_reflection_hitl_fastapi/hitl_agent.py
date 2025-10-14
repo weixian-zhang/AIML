@@ -2,6 +2,7 @@
 from typing import Annotated, TypedDict, Literal
 from pydantic import BaseModel, Field
 from langchain_azure_ai  import AzureAIChatCompletionsModel
+from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, START, END, add_messages
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, AIMessage
 from langgraph.types import interrupt, Command
@@ -161,21 +162,34 @@ def human_feedback(state: AgentState):
 
 def human_approve_reject(state: AgentState):
 
-    # class ApproveReject(BaseModel):
-    #     approve_reject: Literal["approve", "reject"]
+    # use sentiment analysis to analyzer human feedback instead of 'approve' value
 
-    # response: AIMessage = llm.with_structured_output(ApproveReject).invoke([
-    #     SystemMessage(content=human_feedback_sentiment_system_prompt),
-    #     HumanMessage(content=state.human_feedback)
-    # ])
+    class SentimentAnalysisOutput(BaseModel):
+        sentiment: Literal["positive", "negative", "neutral", "mixed"] = Field(description="The overall sentiment of the text.")
+        confidence_score: float = Field(description="A numerical score indicating the confidence of the sentiment analysis (0.0 to 1.0).")
+        explanation: str = Field(description="A brief explanation for the determined sentiment.")
+    
+    structured_llm = llm.with_structured_output(SentimentAnalysisOutput)
 
-    # if (approve_reject := response['approve_reject']) == 'approve':
-    #     return END
+    prompt = ChatPromptTemplate.from_messages([
+        SystemMessage("Analyze the sentiment of the following text and return a structured output."),
+        HumanMessage(state.human_feedback)
+    ])
 
-    if 'approve' in state.human_feedback.lower():
+    sentiment_chain = prompt | structured_llm
+
+    result = sentiment_chain.invoke({})
+
+    if result.sentiment == 'positive':
         return END
     
     return 'reflection_on_human_feedback'
+
+    # detect hard-code value 'approve;
+    # if 'approve' in state.human_feedback.lower():
+    #     return END
+    
+    # return 'reflection_on_human_feedback'
 
 
 
@@ -226,20 +240,21 @@ config = {"configurable": {"thread_id": '1'}}
 
 
 for event in graph.stream(AgentState(
-    topic = '''I like a written topic about transformer architecture'''
+    topic = '''I like a written topic about transformer architecture''',
+    human_feedback= 'not really what I wanted, I like to know more of the inner workings instead'
 ), config=config, stream_mode=['values']):
     
     print([f'{k}: {v[10:]}...{v[-10:]}\n' for k, v in event[1].items()])
 
 loop = 0
-num_of_feedback = 5
+num_of_feedback = 4
 
-while loop < num_of_feedback:
+while loop <= num_of_feedback:
 
     current_state = graph.get_state(config)
 
     if not current_state.tasks:
-        print('Graph completed')
+        print('Essay approved! Exiting feedback loop.')
         break
 
     
@@ -253,22 +268,28 @@ while loop < num_of_feedback:
 
     user_feedback = input('your feedback')
 
-    for event in graph.invoke(
-            Command(resume=user_feedback),
-            config=config
-        ):
+    response = graph.invoke(Command(resume=user_feedback), config=config)
+
+    # for event in graph.stream(
+    #         Command(resume=user_feedback),
+    #         config=config
+    #     ):
         # node_name = list(event.keys())[0]
         # print(f"   Executed: {node_name}")
         #pprint.pprint(event)
-        pass
+
 
     # Check if approved
-    final_state = graph.get_state(config)
-    if final_state.values.get('approved'):
-        print("\n🎉 Essay approved! Exiting feedback loop.")
-        break
+    # final_state = graph.get_state(config)
+    # if final_state.values.get('approved'):
+    #     print("\n🎉 Essay approved! Exiting feedback loop.")
+    #     break
 
     loop += 1
+
+
+if loop == num_of_feedback:
+    print('too many iterations, exiting...')
 
 
 # interrupt_value = graph.get_state(config).tasks[0].interrupts[0]
@@ -277,8 +298,5 @@ while loop < num_of_feedback:
 
 
 #final_result = graph.invoke(Command(resume="the essay does not tell the real inner workings of how transformer work under the hood"), config=config)
-
-
-
 
 # https://shaveen12.medium.com/langgraph-human-in-the-loop-hitl-deployment-with-fastapi-be4a9efcd8c0
