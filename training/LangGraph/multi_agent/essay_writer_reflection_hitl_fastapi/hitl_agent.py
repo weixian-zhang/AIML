@@ -7,16 +7,18 @@ from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, AI
 from langgraph.types import interrupt, Command
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_tavily import TavilySearch
+import pprint
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class AgentState(BaseModel):
+    topic: str = Field(default_factory=str)
     messages: Annotated[list[BaseMessage], add_messages] = Field(default_factory=list)
     essay_output: str = Field(default_factory=str)
     plan: str = Field(default_factory=str)
     web_research_content: str = Field(default_factory=str)
-    user_feedback: str = Field(default_factory=str)
+    human_feedback: str = Field(default_factory=str)
 
 
 llm = AzureAIChatCompletionsModel(  
@@ -45,20 +47,20 @@ def planner_system_prompt() -> str:
     or instructions for the sections.
     '''
 
-def writer_prompt(research_content: str) -> str:
+def writer_system_prompt(web_research_content: str) -> str:
 
     return '''
     You are an essay assistant tasked with writing excellent 10-paragraph essays.\n
     Generate the best essay possible for the user's request and the initial outline. \n
     If the user provides critique, respond with a revised version of your previous attempts. \n
-    Utilize all research_content information below as needed: 
+    Utilize all web research content information below as needed: 
     \n\n
     ------
-    research_content:\n
-    {research_content}
+    web research content:\n
+    {web_research_content}
     '''
 
-def reflection_prompt(essay: str) -> str: 
+def reflection_prompt(essay: str) -> str:
     return f'''
     You are a teacher grading an essay submission. \n
     Generate critique, suggestions and recommendations for student's essay below. \n
@@ -69,75 +71,79 @@ def reflection_prompt(essay: str) -> str:
     {essay}
     '''
 
-def reflect_on_human_feedback(human_feedback: str):
-    return f'''
-    You are an expert essay writer reviewing draft essay and user's feedback.\n
-    Take user feedback into serious consideration and use. user feedback to make amendments to the draft.\n
-    \n\n
-    -----
-    user feedback:
-    {human_feedback}
-    '''
-
 def web_researcher_system_prompt(plan: str) -> str:
     return f'''
     You are a researcher charged with providing information that can \n
     be used when writing the following essay topic or plan. Generate a list of search queries that will gather \n
-    any relevant information. Only generate 3 queries max.
+    any relevant information.\n\n
+
+    Only generate 3 queries max.\n\n
+
     \n\n
     -----
     essay_topic:\n
     {plan}
     '''
 
+
+def reflect_on_human_feedback():
+    return f'''
+    You are an expert essay writer reviewing draft essay and user's feedback.\n
+    Take user feedback into serious consideration and use user's feedback to make amendments to the draft.
+    '''
+
+
 human_feedback_sentiment_system_prompt = """determine if user's is positive or negative. If positive means user approves of essay and negative sentiment means user rejects draft essay.\n
 final output: Outputs only 'approve' or 'reject'."""
 
 
 def planner(state: AgentState):
-    system_prompt = SystemMessage(content= planner_system_prompt())
 
-    messages = [system_prompt] + state.messages
+    messages = [SystemMessage(content= planner_system_prompt()),
+                HumanMessage(content=state.topic)]
 
     response: AIMessage = llm.invoke(messages)
 
-    return { 'messages': [response], 'plan': response.content}
+    return { 'messages': messages + [response], 'plan': response.content}
 
 
 def web_researcher(state: AgentState):
 
     class Query(TypedDict):
-        query: str
+        query: list[str]
 
     if not state.plan:
         return Command(goto='planner')
     
     research_content = []
-    system_prompt = SystemMessage(content=web_researcher_system_prompt(state.plan))
+    messages = [SystemMessage(content=web_researcher_system_prompt(state.plan)),
+                HumanMessage(content=state.topic)]
 
-    queries = llm.with_structured_output(Query).invoke([
-        SystemMessage(content=system_prompt), 
-        HumanMessage(content=state.plan)    # plan from planner node
-    ])
+    queries = llm.with_structured_output(Query).invoke(messages)
 
-    for q in queries:
+
+    for q in queries['query']:
         result = search_client.invoke({'query': q})
         content =  result['answer']
         research_content.append(content)
 
-    final_research_content = '\n'.join(research_content)
+    final_research_content = '\n\n'.join(research_content)
     
-    return {'web_research_content': final_research_content}
+    return {'messages': messages, 'web_research_content': final_research_content}
 
 
 def writer(state: AgentState):
 
-    system_prompt = SystemMessage(content=writer_prompt(state.web_research_content))
-    human_prompt = f'my plan: {state.plan}'
 
-    response: AIMessage = llm.invoke([system_prompt, human_prompt])
+    messages = [
+        SystemMessage(content=writer_system_prompt(state.web_research_content)),
+        HumanMessage(content=f'''this is the essay topic:{state.topic} \n\n
+                     my plan: {state.plan}''')
+    ]
 
-    return {'messages': state.messages, 'essay_output': response.content}
+    response: AIMessage = llm.invoke(messages)
+
+    return {'messages': messages + [response], 'essay_output': response.content}
 
 
 
@@ -155,37 +161,44 @@ def human_feedback(state: AgentState):
 
 def human_approve_reject(state: AgentState):
 
-    class ApproveReject:
-        approve_reject = Literal['approve', 'reject']
+    # class ApproveReject(BaseModel):
+    #     approve_reject: Literal["approve", "reject"]
 
-    response: AIMessage = llm.with_structured_output(ApproveReject).invoke([
-        SystemMessage(content=human_feedback_sentiment_system_prompt),
-        HumanMessage(content=state.human_feedback)
-    ])
+    # response: AIMessage = llm.with_structured_output(ApproveReject).invoke([
+    #     SystemMessage(content=human_feedback_sentiment_system_prompt),
+    #     HumanMessage(content=state.human_feedback)
+    # ])
 
-    if (approve_reject := response.content) == 'approve':
+    # if (approve_reject := response['approve_reject']) == 'approve':
+    #     return END
+
+    if 'approve' in state.human_feedback.lower():
         return END
     
-    return 'human_feedback'
+    return 'reflection_on_human_feedback'
 
-     
 
 
 def reflection_on_human_feedback(state: AgentState):
     human_feedback = state.human_feedback
-    system_prompt = reflect_on_human_feedback(human_feedback=human_feedback)
+    draft_essay = state.essay_output
 
     response: AIMessage = llm.invoke([
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=state.essay_output)
+        SystemMessage(content=reflect_on_human_feedback()),
+        HumanMessage(content=f'''Revise draft essay based on user's feedback\n\n
+                     
+                     user feedback:\n
+                     {human_feedback}\n\n
+
+                    ------\n
+
+                    draft essay:\n
+                    {draft_essay}
+                     ''')
     ])
 
-    return { 'messages': state.messages, 'essay_output': response.content }
 
-
-def reflection(state: AgentState) -> dict:
-    user_feedback = state.user_feedback
-
+    return { 'messages': state.messages + [response], 'essay_output': response.content }
 
 
 
@@ -203,6 +216,7 @@ builder.add_edge('planner', 'web_researcher')
 builder.add_edge('web_researcher', 'writer')
 builder.add_edge('writer', 'human_feedback')
 builder.add_conditional_edges('human_feedback', human_approve_reject)
+builder.add_edge('reflection_on_human_feedback', 'human_feedback')
 
 
 graph = builder.compile(checkpointer=memory_checkpointer)
@@ -212,17 +226,15 @@ config = {"configurable": {"thread_id": '1'}}
 
 
 for event in graph.stream(AgentState(
-    messages= [HumanMessage(content='''I like a written topic about transformer architecture''')]
-), config=config):
+    topic = '''I like a written topic about transformer architecture'''
+), config=config, stream_mode=['values']):
     
-    print(event)
-
+    print([f'{k}: {v[10:]}...{v[-10:]}\n' for k, v in event[1].items()])
 
 loop = 0
 num_of_feedback = 5
 
 while loop < num_of_feedback:
-
 
     current_state = graph.get_state(config)
 
@@ -233,28 +245,28 @@ while loop < num_of_feedback:
     
     essay = ''
     if current_state.tasks[0].interrupts:
-        interrupt_data = current_state.tasks[0].interrupts[0].value
+        interrupt_data = current_state.tasks[0].interrupts[0].value['essay_output']
         print(f"Interrupt data: {interrupt_data}")
         essay = graph.get_state(config=config).tasks[0].interrupts[0].value
 
-    print(essay)
+    pprint.pprint(essay)
 
     user_feedback = input('your feedback')
 
-    for event in graph.stream(
-            Command(resume_value=user_feedback),
+    for event in graph.invoke(
+            Command(resume=user_feedback),
             config=config
         ):
-        node_name = list(event.keys())[0]
-        print(f"   Executed: {node_name}")
-        print(event)
+        # node_name = list(event.keys())[0]
+        # print(f"   Executed: {node_name}")
+        #pprint.pprint(event)
+        pass
 
     # Check if approved
     final_state = graph.get_state(config)
     if final_state.values.get('approved'):
         print("\n🎉 Essay approved! Exiting feedback loop.")
         break
-
 
     loop += 1
 
