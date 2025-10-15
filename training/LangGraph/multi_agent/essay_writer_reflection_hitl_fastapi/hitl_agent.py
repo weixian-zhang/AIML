@@ -1,4 +1,5 @@
 
+import os
 from typing import Annotated, TypedDict, Literal
 from pydantic import BaseModel, Field
 from langchain_azure_ai  import AzureAIChatCompletionsModel
@@ -7,6 +8,11 @@ from langgraph.graph import StateGraph, START, END, add_messages
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, AIMessage
 from langgraph.types import interrupt, Command
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.store.base import BaseStore, Item
+from langgraph.store.memory import InMemoryStore
+from langgraph.store.sqlite import SqliteStore
+import sqlite3
 from langchain_tavily import TavilySearch
 import pprint
 from dotenv import load_dotenv
@@ -41,11 +47,13 @@ search_client = TavilySearch(
     )
 
 
-def planner_system_prompt() -> str:
+def planner_system_prompt(tone: str, writing_style: str) -> str:
     return '''
     You are an expert writer tasked with writing a high level outline of an essay. \n
     Write such an outline for the user provided topic. Give an outline of the essay along with any relevant notes \n
-    or instructions for the sections.
+    or instructions for the sections.\n\n
+
+    The user prefer tone to be {tone} and writing style to be {writing_style}.
     '''
 
 def writer_system_prompt(web_research_content: str) -> str:
@@ -98,9 +106,15 @@ human_feedback_sentiment_system_prompt = """determine if user's is positive or n
 final output: Outputs only 'approve' or 'reject'."""
 
 
-def planner(state: AgentState):
+def planner(state: AgentState, store: BaseStore):
 
-    messages = [SystemMessage(content= planner_system_prompt()),
+    item: Item = store.get(namespace=('user_id_1', 'admin'), key='preference')
+    value = item.dict() if item else {}
+    user_preference = value.get('value', {})
+    tone = user_preference.get('tone', 'casual')
+    writing_style = user_preference.get('style', 'short and sharp')
+
+    messages = [SystemMessage(content= planner_system_prompt(tone, writing_style)),
                 HumanMessage(content=state.topic)]
 
     response: AIMessage = llm.invoke(messages)
@@ -215,9 +229,25 @@ def reflection_on_human_feedback(state: AgentState):
     return { 'messages': state.messages + [response], 'essay_output': response.content }
 
 
+def create_sqlite_conn(db_name: str):
+    curr_dir = os.path.dirname(__file__)
+    conn = sqlite3.connect(os.path.join(curr_dir, db_name), check_same_thread=False)
+    return conn
 
 
+# short and long term memory
 memory_checkpointer = InMemorySaver()
+sqlite_checkpointer = SqliteSaver(create_sqlite_conn('langgraph_state_snapshots.db'))
+
+# conn = sqlite3.connect(":memory:")
+# store = SqliteStore(conn)
+# store.setup()  # Run migrations. Done once
+store = InMemoryStore()
+store.put(
+        namespace=('user_id_1', 'admin'),
+        key='preference',
+            value={"tone": "casual", "style": "precise short and sharp content"}
+        )
 
 builder = StateGraph(AgentState)
 builder.add_node('planner', planner)
@@ -233,15 +263,15 @@ builder.add_conditional_edges('human_feedback', human_approve_reject)
 builder.add_edge('reflection_on_human_feedback', 'human_feedback')
 
 
-graph = builder.compile(checkpointer=memory_checkpointer)
+graph = builder.compile(checkpointer=sqlite_checkpointer, store=store)
 
 
 config = {"configurable": {"thread_id": '1'}}
 
 
 for event in graph.stream(AgentState(
-    topic = '''I like a written topic about transformer architecture''',
-    human_feedback= 'not really what I wanted, I like to know more of the inner workings instead'
+    topic = '''I like a written topic about transformer architecture'''
+    # human_feedback= 'not really what I wanted, I like to know more of the inner workings instead'
 ), config=config, stream_mode=['values']):
     
     print([f'{k}: {v[10:]}...{v[-10:]}\n' for k, v in event[1].items()])
