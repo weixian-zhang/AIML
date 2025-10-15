@@ -12,6 +12,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.store.base import BaseStore, Item
 from langgraph.store.memory import InMemoryStore
 from langgraph.store.sqlite import SqliteStore
+from langchain_core.runnables import RunnableConfig
 import sqlite3
 from langchain_tavily import TavilySearch
 import pprint
@@ -105,8 +106,10 @@ def reflect_on_human_feedback():
 human_feedback_sentiment_system_prompt = """determine if user's is positive or negative. If positive means user approves of essay and negative sentiment means user rejects draft essay.\n
 final output: Outputs only 'approve' or 'reject'."""
 
+# config and store will be injected by langgraph at runtime
+def planner(state: AgentState, config: RunnableConfig, store: BaseStore):
 
-def planner(state: AgentState, store: BaseStore):
+    print(f'thread id from config: {config["configurable"]["thread_id"]}')
 
     item: Item = store.get(namespace=('user_id_1', 'admin'), key='preference')
     value = item.dict() if item else {}
