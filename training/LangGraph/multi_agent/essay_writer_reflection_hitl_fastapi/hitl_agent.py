@@ -106,6 +106,18 @@ def reflect_on_human_feedback():
 human_feedback_sentiment_system_prompt = """determine if user's is positive or negative. If positive means user approves of essay and negative sentiment means user rejects draft essay.\n
 final output: Outputs only 'approve' or 'reject'."""
 
+
+# example not in use but to showcase using LLM to get user preference and store.put() tp update user preference
+def update_user_preference(state: AgentState, config: RunnableConfig, store: BaseStore):
+    return f'''
+    You are an expert assistant that updates user preference based on user's feedback.\n
+    Extract user's preference from the feedback and update user preference accordingly.\n
+    Final output is a json object with keys 'tone' and 'style'.\n
+    If no preference is mentioned, return empty json object {{}}.
+    '''
+    # code to LLM get user preference and update in the store
+
+
 # config and store will be injected by langgraph at runtime
 def planner(state: AgentState, config: RunnableConfig, store: BaseStore):
 
