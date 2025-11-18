@@ -70,7 +70,7 @@ def random_text(text: str) -> str:
 # combine 2 chains
 fact_check_chain = ChatPromptTemplate.from_template('Fact check this statement: {statement}') | llm | output_parser
 
-# branch can output ramdom text or first-half of the chain output
+# branch can output random text or first-half of the chain output
 branch_shorten_or_not = RunnableBranch(
     (lambda chain_output: len(chain_output) > 80, random_text),
     lambda chain_output: chain_output
