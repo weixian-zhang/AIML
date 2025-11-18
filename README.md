@@ -8,6 +8,11 @@
 ### [Machine Learning Specialization](https://www.coursera.org/account/accomplishments/specialization/J0YF4OSP8268)
 ![image](https://github.com/user-attachments/assets/ff8ef3d0-fc7c-4ed5-ac02-412cf7de9d32)
 
+### Microsoft Certified: Azure AI Engineer Associate  
+<img width="795" height="465" alt="image" src="https://github.com/user-attachments/assets/c942eed4-b3ad-4247-bb6a-8a6d9996d77e" />
+
+
+
 
 
 
