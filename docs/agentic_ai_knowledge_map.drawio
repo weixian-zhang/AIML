@@ -1,0 +1,43 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.0.3 Chrome/140.0.7339.249 Electron/38.7.0 Safari/537.36" version="29.0.3">
+  <diagram name="Page-1" id="3o4zRw8oD_L8M0QbYamJ">
+    <mxGraphModel dx="1212" dy="786" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-1" value="Context Engineering" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="160" y="70" width="160" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-2" value="Prompt Engineering" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="410" y="80" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-3" value="12 Factor Agent" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="440" y="230" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-4" value="Agent Design Patterns" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="450" y="350" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-5" value="Orchestration Patterns" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="340" y="450" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-6" value="Tools &amp;amp; Libraries" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#fff2cc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="650" y="450" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-7" value="&quot;standard&quot; Agent Types" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="200" y="290" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-8" value="RAG" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="240" y="550" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-9" value="MCP + A2A" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="540" y="570" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-10" value="LLM Fine Tuning" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="50" y="410" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-11" value="SaaS Workflow COTS" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#d5e8d4;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="650" y="90" width="160" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
