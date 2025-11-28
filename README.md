@@ -2,7 +2,7 @@
 
 ## Certifications  
 
-### Building AI Agents and Agentic Workflows Specialization
+### [Building AI Agents and Agentic Workflows Specialization](https://www.coursera.org/account/accomplishments/specialization/QC0LV04VYNOW)
 <img width="961" height="742" alt="image" src="https://github.com/user-attachments/assets/c07a233e-ca81-47bd-a424-c31882fa600d" />
 
 ### [Mathematics for Machine Learning and Data Science Specialization](https://www.coursera.org/account/accomplishments/specialization/TN76LTZA0G3P)
