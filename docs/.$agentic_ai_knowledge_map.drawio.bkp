@@ -4,7 +4,7 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-1" value="Context Engineering&lt;br&gt;Context Rot" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" parent="1" vertex="1">
+        <mxCell id="jJzrmXa0rQ2rC4nJt-w1-1" value="Context Engineering" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" parent="1" vertex="1">
           <mxGeometry x="190" y="90" width="160" height="60" as="geometry" />
         </mxCell>
         <mxCell id="jJzrmXa0rQ2rC4nJt-w1-2" value="Prompt Engineering" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" parent="1" vertex="1">
@@ -37,7 +37,7 @@
         <mxCell id="jJzrmXa0rQ2rC4nJt-w1-11" value="SaaS Workflow COTS" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#d5e8d4;strokeColor=none;" parent="1" vertex="1">
           <mxGeometry x="650" y="90" width="160" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="V9Ft2Z-0i4V4sxyNLaho-1" value="Functional Testing&lt;div&gt;promptfoo&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" parent="1" vertex="1">
+        <mxCell id="V9Ft2Z-0i4V4sxyNLaho-1" value="Functional Testing&lt;div&gt;promptfoo&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;strokeColor=none;" vertex="1" parent="1">
           <mxGeometry x="640" y="270" width="160" height="60" as="geometry" />
         </mxCell>
       </root>
