@@ -17,6 +17,7 @@ class TreeNode(BaseModel):
     score: float  # How promising this path is (0-1)
     is_solution: bool = False
     is_dead_end: bool = False
+    is_visited: bool = False
 
 class ToTState(BaseModel):
     problem: str
@@ -30,14 +31,18 @@ class DecisionBranch(BaseModel):
     branch_id: str
     reason: str
     confidence: float
+    branches: List['DecisionBranch']
 
 class DecisionBranchList(BaseModel):
     branches: List[DecisionBranch]
 
 class BranchEvaluationVerdict(BaseModel):
     is_solution: bool
+    is_solution_reason: str
     is_dead_end: bool
+    is_dead_end_reason: str
     should_continue: bool
+    should_continue_reason: str
 
 # =============================================================================
 # LLM
@@ -67,12 +72,20 @@ def generate_branches(state: ToTState) -> dict:
 
 Current reasoning path: {context}
 
-Generate 3 different possible next steps or approaches to solve this problem.
-For each approach, provide:
+Your task:
+Generate multiple high-level strategies for structuring the visit order (e.g., shortest routes first, highest-value attractions first, hybrid strategies, etc.).
+For each strategy, branch into at least two possible route sequences, estimating total time and value.
+Evaluate each branch, noting tradeoffs like time pressure, wasted travel, or low-value stops.
+
+** output **
+For each strategy, provide:
 1. A brief description
 2. Why this might work
 3. A confidence score (0-1)
+4. for child branches, repeat the above structure. With branch ids reflecting the path (e.g., "1", "1.1", "1.2", "2", "2.1", etc.)
 
+** Important **
+Show your reasoning as a tree, where each branching point reflects a distinct line of thought or planning heuristic.
 """
 # Format as:
 # Option A: [description] | Confidence: [0-X]
@@ -92,13 +105,28 @@ For each approach, provide:
     #lines = response.content.split('\n')
     branches = {}
 
-    for b in response.branches:
-        #branch_id = f"{state.current_path}.{len(branches)+1}" if state.current_path != "root" else str(len(branches)+1)
-        branches[b.branch_id] = TreeNode(
-            path_id=b.branch_id,
-            reasoning=b.reason,
-            score=b.confidence
+    # flatten child branches
+    def recurse_branches(branch: DecisionBranch):
+        branches[branch.branch_id] = TreeNode(
+            path_id=branch.branch_id,
+            reasoning=branch.reason,
+            score=branch.confidence
         )
+        for child in branch.branches:
+            print(f"   Generated branch {child.branch_id}: {child.reason[:60]}... (score: {child.confidence})")
+            recurse_branches(child)
+
+    for b in response.branches:
+        print(f"   Generated branch {b.branch_id}: {b.reason[:60]}... (score: {b.confidence})")
+        recurse_branches(b)
+
+    # for b in response.branches:
+    #     #branch_id = f"{state.current_path}.{len(branches)+1}" if state.current_path != "root" else str(len(branches)+1)
+    #     branches[b.branch_id] = TreeNode(
+    #         path_id=b.branch_id,
+    #         reasoning=b.reason,
+    #         score=b.confidence
+    #     )
     
     # for i, line in enumerate(lines[:3], 1):
     #     if 'Option' in line:
@@ -125,7 +153,7 @@ For each approach, provide:
     
     # ✅ Select best branch to explore next
     if branches:
-        best_branch_id = min(branches.keys(), key=lambda k: branches[k].score)
+        best_branch_id = max(branches.keys(), key=lambda k: branches[k].score)
         print(f"   → Moving to explore branch {best_branch_id}")
         next_path = best_branch_id
     else:
@@ -147,14 +175,17 @@ def evaluate_path(state: ToTState) -> dict:
     """
     print(f"\n🔍 EVALUATING path {state.current_path}")
     
+    
     current_node = state.explored_nodes[state.current_path]
+    current_node.is_visited = True
+
     
     evaluation_prompt = f"""Problem: {state.problem}
 
 Current reasoning: {current_node.reasoning}
 
 Evaluate this reasoning path:
-1. Is this a valid solution to the problem? (yes/no)
+1. It could be a solution but is this the best solution to the problem? (yes/no)
 2. Is this a dead end that won't lead to a solution? (yes/no)
 3. Should we continue exploring this path? (yes/no)
 
@@ -167,27 +198,39 @@ Evaluate this reasoning path:
     should_continue_reason: [brief explanation]
 """
     
-    response = llm.invoke([HumanMessage(content=evaluation_prompt)])
-    verdict = response.content.strip().upper()
+    llm = AzureChatOpenAI(
+                    deployment_name="gpt-4o",
+                    model="gpt-4o",
+                    api_version="2024-12-01-preview",
+                    temperature=0.0
+                )
     
+    response = llm.with_structured_output(BranchEvaluationVerdict).invoke([HumanMessage(content=evaluation_prompt)])
+    #verdict = response.content.strip().upper()
+    
+    
+
     updated_node = TreeNode(**current_node.dict())
-    
-    if "SOLUTION" in verdict:
+
+    if response.is_solution:
         updated_node.is_solution = True
+        updated_node.reasoning = response.is_solution_reason
         print(f"   ✅ SOLUTION FOUND!")
         return {
             "explored_nodes": {**state.explored_nodes, state.current_path: updated_node},
             "best_solution": updated_node
         }
-    
-    elif "DEAD_END" in verdict or "DEAD END" in verdict:
+
+    elif response.is_dead_end:
         updated_node.is_dead_end = True
+        updated_node.reasoning = response.is_dead_end_reason
         print(f"   ❌ DEAD END - need to backtrack")
         return {
             "explored_nodes": {**state.explored_nodes, state.current_path: updated_node}
         }
     
     else:
+        updated_node.reasoning = response.should_continue_reason
         print(f"   ⏭️  CONTINUE exploring")
         return {
             "explored_nodes": {**state.explored_nodes, state.current_path: updated_node}
@@ -205,19 +248,23 @@ def select_next_path(state: ToTState) -> dict:
     
     # Find all unexplored, non-dead-end paths
     candidates = []
-    for path_id, node in state.explored_nodes.items():
-        if not node.is_solution and not node.is_dead_end:
-            # Check if this path has been fully explored (has children)
-            has_children = any(p.startswith(f"{path_id}.") for p in state.explored_nodes.keys())
-            if not has_children:
-                candidates.append((path_id, node.score))
+
+    candidates = [val for key, val in state.explored_nodes.items() if not val.is_solution and not val.is_dead_end and not val.is_visited]
+    # for path_id, node in state.explored_nodes.items():
+    #     if not node.is_solution and not node.is_dead_end:
+    #         # Check if this path has been fully explored (has children)
+    #         has_children = any(p.startswith(f"{path_id}.") for p in state.explored_nodes.keys())
+    #         if not has_children:
+    #             candidates.append((path_id, node.score))
     
     if not candidates:
         print("   ⚠️  No more paths to explore!")
         return {"current_path": "END"}
     
     # Select path with highest score (best-first search)
-    next_path = max(candidates, key=lambda x: x[1])[0]
+    #next_path = max(candidates, key=lambda x: x[1])[0]
+    next_node = max(candidates, key=lambda x: x.score)
+    next_path = next_node.path_id
     print(f"   → Selected path {next_path} (score: {state.explored_nodes[next_path].score})")
     
     return {"current_path": next_path}
@@ -250,19 +297,28 @@ def router(state: ToTState) -> Literal["generate", "evaluate", "select", "END"]:
         print("   → GENERATE branches")
         return "generate"
     
+    # all nodes visited
+    if all(n.is_visited for n in state.explored_nodes.values()):
+        print("   → All nodes visited → GENERATE more branches")
+        return "generate"
+    
     # Check if current path has been evaluated
     current_node = state.explored_nodes[state.current_path]
-    
+
+
     # If not evaluated yet, evaluate it
-    if not current_node.is_solution and not current_node.is_dead_end:
-        # Check if we've already generated children for this node
-        has_children = any(p.startswith(f"{state.current_path}.") for p in state.explored_nodes.keys())
-        if not has_children:
-            print("   → EVALUATE current path")
-            return "evaluate"
-        else:
-            print("   → SELECT next path (backtrack)")
-            return "select"
+    if not current_node.is_visited:
+        print("   → EVALUATE current path")
+        return "evaluate"
+    # if not current_node.is_solution and not current_node.is_dead_end:
+    #     # Check if we've already generated children for this node
+    #     has_children = any(p.startswith(f"{state.current_path}.") for p in state.explored_nodes.keys())
+    #     if not has_children:
+    #         print("   → EVALUATE current path")
+    #         return "evaluate"
+    #     else:
+    #         print("   → SELECT next path (backtrack)")
+    #         return "select"
     
     # Path is dead end or solution, need to select next
     print("   → SELECT next path (backtrack)")
@@ -331,14 +387,7 @@ Each city has:
 * A travel time to every other city (varies 30-90 minutes).
 * The traveler wants to maximize total attraction value while keeping the total day under 8 hours, including travel.
 
-Your task:
-Generate multiple high-level strategies for structuring the visit order (e.g., shortest routes first, highest-value attractions first, hybrid strategies, etc.).
-For each strategy, branch into at least two possible route sequences, estimating total time and value.
-Evaluate each branch, noting tradeoffs like time pressure, wasted travel, or low-value stops.
-Select the best route and justify why it dominates the others.
-
-Important:
-Show your reasoning as a tree, where each branching point reflects a distinct line of thought or planning heuristic.
+Provide the optimal route and reasoning steps.
 """
     #"Find the optimal route to visit 4 cities: NYC, Boston, Philly, DC, starting from NYC and minimizing total distance"
 ))
@@ -349,7 +398,7 @@ print("="*70)
 print(f"Total iterations: {result['iteration']}")
 print(f"Paths explored: {len(result['explored_nodes'])}")
 
-if result['best_solution']:
+if result.get('best_solution'):
     print(f"\n✅ BEST SOLUTION:")
     print(f"   Path: {result['best_solution'].path_id}")
     print(f"   Reasoning: {result['best_solution'].reasoning}")
