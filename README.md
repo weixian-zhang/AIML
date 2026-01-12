@@ -2,10 +2,6 @@
 
 ## Certifications  
 
-### [Prompt Engineering Essentials](https://coursera.org/share/441d9ad16a901e4acda79e6baa790529)  
-<img width="962" height="733" alt="image" src="https://github.com/user-attachments/assets/42d14a50-4a44-4e5d-93a4-2879d0e44dd5" />
-
-
 ### [Building AI Agents and Agentic Workflows Specialization](https://www.coursera.org/account/accomplishments/specialization/QC0LV04VYNOW)
 <img width="961" height="742" alt="image" src="https://github.com/user-attachments/assets/c07a233e-ca81-47bd-a424-c31882fa600d" />
 
