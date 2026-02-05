@@ -61,7 +61,7 @@ llm = AzureChatOpenAI(
 
 def generate_branches(state: ToTState) -> dict:
     """
-    Generate 2-3 possible reasoning paths from current position
+    Generate 3 possible reasoning paths from current position
     """
     print(f"\n🌿 BRANCHING from {state.current_path} (iteration {state.iteration})")
     
@@ -73,7 +73,7 @@ def generate_branches(state: ToTState) -> dict:
 Current reasoning path: {context}
 
 Your task:
-Generate multiple high-level strategies for structuring the visit order (e.g., shortest routes first, highest-value attractions first, hybrid strategies, etc.).
+Generate 3 high-level strategies for structuring the visit order (e.g., shortest routes first, highest-value attractions first, hybrid strategies, etc.).
 For each strategy, branch into at least two possible route sequences, estimating total time and value.
 Evaluate each branch, noting tradeoffs like time pressure, wasted travel, or low-value stops.
 
@@ -379,8 +379,7 @@ print("="*70)
 print("🌳 TREE OF THOUGHTS REASONING")
 print("="*70)
 
-result = graph.invoke(ToTState(
-    problem="""
+problem_1 = """
 You are solving a planning puzzle. A traveler wants to visit four cities—A, B, C, and D—in one day.
 Each city has:
 * A unique attraction with a time cost (1-3 hours).
@@ -389,6 +388,27 @@ Each city has:
 
 Provide the optimal route and reasoning steps.
 """
+
+problem_2 = """ 1. Carlos is at the swimming pool. 
+				2. He walks to the locker room, carrying a towel. 
+				3. He puts his watch in the towel and carries the towel tightly to a lounger at the poolside. 
+				4. At the lounger he opens and vigorously shakes the towel, then walks to the snack bar. 
+				5. He leaves the towel at the snack bar, then walks to the diving board. 
+				6. Later Carlos realises he has has lost his watch. 
+				Where is the single most likely location of the watch?
+"""
+
+result = graph.invoke(ToTState(
+    problem=problem_2
+))
+
+print("\n" + "="*70)
+print("📊 EXPLORATION RESULTS")
+print("="*70)
+print(f"Total iterations: {result['iteration']}")
+print(f"Paths explored: {len(result['explored_nodes'])}")
+
+if result.get('best_solution'):
     #"Find the optimal route to visit 4 cities: NYC, Boston, Philly, DC, starting from NYC and minimizing total distance"
 ))
 

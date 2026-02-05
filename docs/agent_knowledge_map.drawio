@@ -1,0 +1,31 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.0.3 Chrome/140.0.7339.249 Electron/38.7.0 Safari/537.36" version="29.0.3">
+  <diagram name="Page-1" id="63_35eGLkqHqjTNYvjcU">
+    <mxGraphModel dx="1212" dy="786" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="s-QUjPViVB-Hw1dkpmfb-1" value="Evaluation" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="510" y="140" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s-QUjPViVB-Hw1dkpmfb-2" value="Web-UI&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;unit-integration-test - Data file&lt;/span&gt;&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="620" y="120" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="s-QUjPViVB-Hw1dkpmfb-3" value="Monitoring" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="510" y="250" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s-QUjPViVB-Hw1dkpmfb-4" value="agent trajectory&lt;div&gt;per-agent-logging&lt;/div&gt;&lt;div&gt;token monitoring&lt;/div&gt;&lt;div&gt;inference latency monitoring&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="600" y="230" width="210" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="s-QUjPViVB-Hw1dkpmfb-5" value="Agentic Design Pattern" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="140" y="100" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s-QUjPViVB-Hw1dkpmfb-6" value="RAG" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="200" width="70" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="s-QUjPViVB-Hw1dkpmfb-7" value="Agent Communication&lt;div&gt;Pattern&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="90" y="310" width="140" height="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
